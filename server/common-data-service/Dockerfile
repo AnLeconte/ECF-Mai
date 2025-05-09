@@ -3,11 +3,9 @@ LABEL maintainer="Antoine"
 WORKDIR /app
 RUN mkdir -p /root/.m2
 COPY pom.xml .
-COPY .mvn/ .mvn/
-COPY mvnw .
-COPY mvnw.cmd .
-RUN mvn dependency:resolve
-RUN mvn clean install -DskipTests
+COPY src src/
+RUN mvn clean install -DskipTests -Dmaven.test.skip=true
+RUN ls -la target/
 
 FROM openjdk:11-slim
 WORKDIR /app
