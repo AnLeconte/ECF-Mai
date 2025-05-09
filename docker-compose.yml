@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=ecommerce
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  common-data-service:
+    build: ./server/common-data-service
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_SCHEMA=ecommerce
+      - DB_USER=root
+      - DB_PASS=root
+      - PORT=8080
+      - ACTIVE_PROFILE=dev
+    depends_on:
+      - mysql
+      - redis
+
+  search-service:
+    build: ./server/search-service
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_SCHEMA=ecommerce
+      - DB_USER=root
+      - DB_PASS=root
+      - PORT=8083
+      - ACTIVE_PROFILE=dev
+    depends_on:
+      - common-data-service
+      - mysql
+      - redis
+
+  authentication-service:
+    build: ./server/authentication-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_SCHEMA=ecommerce
+      - DB_USER=root
+      - DB_PASS=root
+      - PORT=8081
+      - ACTIVE_PROFILE=dev
+    depends_on:
+      - common-data-service
+      - mysql
+      - redis
+
+  payment-service:
+    build: ./server/payment-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_SCHEMA=ecommerce
+      - DB_USER=root
+      - DB_PASS=root
+      - PORT=8082
+      - ACTIVE_PROFILE=dev
+    depends_on:
+      - common-data-service
+      - mysql
+      - redis
+
+  client:
+    build: ./client
+    ports:
+      - "3000:80"
+    depends_on:
+      - search-service
+      - authentication-service
+      - common-data-service
+      - payment-service
+      - mysql
+      - redis
+
+volumes:
+  redis_data:
+  mysql_data:
